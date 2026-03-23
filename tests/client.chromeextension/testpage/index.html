@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>noncey test page</title>
+  <style>
+    body  { font-family: system-ui, sans-serif; max-width: 400px; margin: 80px auto; padding: 0 16px; }
+    h2    { color: #00897b; }
+    label { display: block; margin-bottom: 6px; font-size: 14px; color: #555; }
+    input { width: 100%; padding: 8px; font-size: 16px;
+            border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    p     { font-size: 12px; color: #999; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h2>noncey smoke test</h2>
+  <label for="otp-field">One-time code</label>
+  <input id="otp-field" type="text" autocomplete="one-time-code"
+         placeholder="waiting for nonce…">
+  <p>This page is used by the noncey extension test suite.
+     The extension should detect this URL and auto-fill the field above.</p>
+
+  <script>
+    // Expose field value for Playwright assertions without needing locators.
+    window.getOtpValue = () => document.getElementById('otp-field').value;
+  </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+pytest>=7.4
+bcrypt>=4.0
+playwright>=1.40    # extension tests only (test_10_autofill)

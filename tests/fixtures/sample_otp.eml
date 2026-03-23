@@ -1,0 +1,11 @@
+From: noncey-test@example.com
+To: nonce-_test_@nonces.example.com
+Subject: noncey smoke test
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+This is an automated noncey smoke-test message.
+
+Your one-time authentication code: NONCE-START:{nonce}:NONCE-END
+
+Please ignore this message if you did not request a code.
