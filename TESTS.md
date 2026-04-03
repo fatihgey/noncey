@@ -1,5 +1,28 @@
 # Noncey — Test Suite Overview
 
+## Running the Tests
+
+```bash
+cd tests
+pip install -r requirements.txt
+
+# Quick smoke (ingest + auth + nonces, no external deps):
+./run_smoke.sh
+
+# All daemon tests including admin UI:
+./run_smoke.sh --all
+
+# Include live Postfix delivery test:
+NONCEY_TEST_MAIL=1 ./run_smoke.sh --all
+
+# Include Chrome extension auto-fill test (requires: playwright install chromium):
+NONCEY_TEST_EXTENSION=1 ./run_smoke.sh --all
+```
+
+The smoke tests are safe to run against a production installation — they use the isolated `_test_` identity and clean up all data on exit.
+
+---
+
 ## Structure
 
 ```
