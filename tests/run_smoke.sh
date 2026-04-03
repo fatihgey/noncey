@@ -16,6 +16,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+pip install -q -r requirements.txt
+
 PYTEST_ARGS=(-v --tb=short)
 TESTS=(
     daemon/test_01_ingest.py
