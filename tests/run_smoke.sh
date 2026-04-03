@@ -17,7 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 pip install -q -r requirements.txt
-pip install -q -r ../noncey.daemon/requirements.txt
+pip install -q -r ../../noncey.daemon/requirements.txt
 
 PYTEST_ARGS=(-v --tb=short)
 TESTS=(
