@@ -1,5 +1,17 @@
 # Noncey — Test Suite Overview
 
+## Testing Subject
+
+All tests run against the **repo clone** (`/git/noncey.daemon/`) directly — the deployed daemon at `/opt/noncey/daemon/` is never involved. The daemon's Python modules are imported in-process via `sys.path`; Flask runs as an in-process test client with no real HTTP socket. Changes deployed via `install.sh` have no effect on the tests, and test runs have no effect on the live service or its database.
+
+This means: to verify a fix, pull the change into the repo clone and rerun the tests — no deployment needed. Conversely, deploying without pulling the clone will not update what the tests exercise.
+
+The one exception is `test_05_mail.py` (opt-in), which sends real SMTP to a live Postfix instance and checks that the nonce lands in SQLite — but even then it talks to Postfix directly, not to the running Flask service.
+
+If you need to test the deployed service end-to-end over real HTTPS, that requires a separate integration test hitting `https://noncey.tld/api/` directly; no such test exists yet.
+
+---
+
 ## Running the Tests
 
 ```bash
