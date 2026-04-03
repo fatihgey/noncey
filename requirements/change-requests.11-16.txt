@@ -1,0 +1,67 @@
+Change #11 (done)
+Create an install script (for Windows, .BAT preferred) for the client, which is run in cmdl in the directory of this script (at a git clone of the repos), has Administrator privileges, and shall copy the files into the appropiate directory. 
+
+Change #12: At the client the configuration pick does work now. Yet, the user should be able to edit the URL (not necessarily the CSS selector). More specifically, the URL setting should be of type
+ [x] Exact:        <here the extracted URL is in>
+ [ ] Begins with:  <                            >
+ [ ] Regular Expression: <						>
+
+ As in my test the URL is https://accounts.ebay.de/acctxs/stepup/hub?params=widMb6FHkJMiUIfuHWtnk-25&ru=https%3A%2F%2Fsignin.ebay.de%2Fsignin%2Fck%3Fru%3Dhttps%253A%252F%252Fwww.ebay.de%252Fmye%252Fmyebay%252Fsummary%26token%3DWbJfPoI2jzdbyfOx1uZdF-15&returnUrl=https%3A%2F%2Fwww.ebay.de%2Fmye%2Fmyebay%2Fsummary%3Ftoken%3Dbb228823-2e11-11f1-b1c3-f7cddbdcd83e&cma=1
+ .. i.e. containing session specific variables that won't make a good matching pattern
+
+Note that the URL is huge. 
+
+Also present the CSS selector separately (in a form-row with label an an input box, readonly, that displays it); for now, it's simply displayed after the URL.
+
+
+Change #14
+In daemon dashboard, in the listing of "my configuration", display the number of nonce tokens currently waiting, and add a button to clear nonces, drop the updated column and put in to the detail page (/auth/configs/{id}).
+
+Change #14.2
+At the client, add a clickable link to the UI at the daemon calling it "Full Account Settings"
+
+
+Change #15
+Redesign UI of daemon. Please load an appropiate skill for front-end design.
+
+Page: Dashboard 
+- Rename to Configurations (Call it also Configurations in the Navigation)
+- Header on the page -> "Configurations"
+- My configurations and subscription are put into one table (no additional header needed)
+  - first column: "Type", values may be "Private" or "Public"
+  - second column "Name", additional informations are also here as badges
+    - for public subscriptions: version
+    - for private: status
+  - column channels is dropped
+  - column waiting stays (display waiting nonce for private+public config)
+  - column actions stay, label "actions" is removed, btn Open stay, public configs have additionally "unsubscribe". Clicking on unsubscribe will visually: (a) turn the button into a subscribe button and (b) strike through the entire row. Clicking on subscribe returns to the previous state
+- buttons "+ New Config" and "Download Gmail filters" follow after the table
+- remove Notification "You have n unmachted emails waiting.."
+
+Navigation: 
+- Add a menu "Admin", on hover popup submenus (Users, Review Queue)
+- Add menu User whos label is the user name, and it aligned most right on the bar (where currently the logout button is)
+  - Move "Account" to become a submenu (as with admin, on hover) and call it Settings
+  - Move "Logout" below the "Settings" in the same submenu
+
+
+Change #16
+Redesign of UI of client
+
+2 tabs
+- 1. List of Configurations as table
+      - first column: "Type", values may be "Private" or "Public"
+	  - second column "Name", additional informations are also here as badges
+	    - for public subscriptions: version
+	    - for private: status
+	  - column "actions" (without label) -> just bts/icons per row      
+- 2. Server Settings (keeping what is currently in "Account")
+- Below the table in (tab 1) is are buttons
+  - Sync with Server
+  - New Configuration (open a tab with respective daemon url called)
+  - Marketplace (opens a tab with respective daemon url called )
+
+Actions: 
+ - Name is not clickable, but "Open" button is present which opens a page with only that configuration. It has a top card displaying displays name, status, and # channels, the bottom card corresponds to the current prompt configuration, labelled not as the name of the configuration but "Prompt"
+
+Current card "Provider Prompt" disappears

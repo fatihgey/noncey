@@ -1,0 +1,61 @@
+Issue #1: In the daemon, when I click on +New configuration there's
+  (#1.1) a field asking for version (not in-line with the configuration concept v2), also there's no wizzard (#1.2) but a simple form. After having created a blank configuration, it displays next to the name "v-1" (as in Version = -1) - a private configuration has no meaningful version, and therefore it should NOT be displayed (#1.3). Moreover next to "v-1" it says "draft", yet the status is called "incomplete"
+
+Feature request (change #12): At the client the configuration pick does work now. Yet, the user should be able to edit the URL (not necessarily the CSS selector). More specifically, the URL setting should be of type
+ [x] Exact:        <here the extracted URL is in>
+ [ ] Begins with:  <                            >
+ [ ] Regular Expression: <						>
+
+ As in my test the URL is https://accounts.ebay.de/acctxs/stepup/hub?params=widMb6FHkJMiUIfuHWtnk-25&ru=https%3A%2F%2Fsignin.ebay.de%2Fsignin%2Fck%3Fru%3Dhttps%253A%252F%252Fwww.ebay.de%252Fmye%252Fmyebay%252Fsummary%26token%3DWbJfPoI2jzdbyfOx1uZdF-15&returnUrl=https%3A%2F%2Fwww.ebay.de%2Fmye%2Fmyebay%2Fsummary%3Ftoken%3Dbb228823-2e11-11f1-b1c3-f7cddbdcd83e&cma=1
+ .. i.e. containing session specific variables that won't make a good matching pattern
+
+Note that the URL is huge. 
+
+Also present the CSS selector separately (in a form-row with label an an input box, readonly, that displays it); for now, it's simply displayed after the URL.
+
+
+I found a new issue (#I2) that probably needs root cause analysis: I have now actual provider emails forwarded to my account (nonce-fatih@noncey.geneso.de). There are no configurations present (I've used dbmaintenance script). When the provider sends a nonce email, it does not show-up at the unmatched emails, but it does show in the archive (server path /opt/noncey/daemon/var/archive/fatih/*). Please suggest how perform root cause analysis.
+
+
+Issue #3: I tested one configuration, since it is valid more than 5 times end-to-end successfully (extracting at daemon, transfer to client, select the nonce at the client, insert into the prompt). The configuration didnt change to valid+tested. Where can I see the testing count?
+
+Issue #4: At the client, I had to select the nonce, althrough the auto-labelled  "pill" is active. Please fix that.
+
+
+Issue #5: Autofill doesnt trigger fully automatic - when the prompt page is called, I am waiting for the nonce to arrive at the daemon. Even after it arrived, no autofill, no reaction. The moment I click on the extension button next the address bar (waking up a sleeping process?) autofill kicks in, and works well
+
+Issue #6: I have subscribed to a public valid configuration, but there's no button to unsubscribe (at the daemon).
+
+Issue #7: I can change data of a channel of a public configuration, that is a configuration will ALL its child objects shall be read only, once it is public.
+
+Issue #8: Editing a public configuration's channel leads to me auth/configs/{id1}/providers/{id2]/edit, a page that is labelled "Edit provider", and shows a toast msg confirming changes says "provider updated".
+Remove all references to provider, replace by channel including the URL.
+
+Issue #9: When I have subscribed to a public configuration, I cannot view the email body of an unmatched email. This is a misunderstood requirement. Please make the body available (I will have to reflect on the requirement that caused it).
+
+Issue #10: Wizzard Step 3
+ Item 2: Click the noncey icon in your browser toolbar, and then the small gear icon at the right-top corner to open the settings page of the browser  extension.
+
+Issue #11: auth/configs/{id}/delete displays: "Are you sure you want to delete <name> v-1?"   <-- v-1 should never be displayed
+
+Issue #12: The display at the top at "auth/configs/{id}" saying "n/m test fills" shall disappear at the status public and valid_tested.
+
+Issue #13: Wizzard has a breadcrumbs that go step 1-5, where as the headers of each step have a numbering 1-4 (step Name doesnt have a number)
+
+Issue #14: When I unsubscribed to a public configuration, in /auth/marketplace the item is listed with "Your config" in the "Actions" column, it should list a subscribe button again
+
+Issue #15: When cancelling the wizzard, the configuration has status "draft". This is an illegal state. Replace ALL status "draft" references by status "incomplete"
+
+Issue #16: 
+Daemon Configurations table: when a public configuration is unsubscribed, action btn open should be disabled (no link cursor on hover, and grayed out; this latter is already the case). Button subscribe is currently grayed out, but shall not be grayed out.
+
+Issue #17:
+At the client, the links to New Configuration and Marketplace are wrong, eg. instead of https://noncey.geneso.de/configs/new it should be 
+https://noncey.geneso.de/auth/configs/new. Add an input field to server settings titled server console url, if left blank the default setting is "auth" (used to construct the URLs for New Config and Marketplace and "Full Account Setting"). Please add the description (Default: auth)
+
+Issue #18: 
+The popup shall not carry the username, pill "auto" rename "autofill", Text "Configure provider in settings" disappears, Link Full Account Settings rename to Settings at Server.
+
+Issue #19: 
+Button at the client "New Configuration" shall have another URL
+auth/configs/new -> auth/wizard/new

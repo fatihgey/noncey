@@ -1,0 +1,45 @@
+Change #17 - cleanup CONCEPT_CONFIGURATION.md
+- Remove §8b (and move 8c ff upwards, updating all in-file references to those items, too)
+- Restructure §9, name it Data Model Supplements
+  Leave the reference to ARCHITECTURE.md as is
+- Create §9.1 "Data Residency", put the Prompt paragaph there
+- Create §9.2. "DB Schema", put all other paraphs of current §9 there
+- Drop §10 (move all following up accordingly)
+- Current §11 Marketplace
+  - remove (admin view) of the title
+  - those aspects that hold true only for admin, add a admin badge end of the bullet item
+- Replace the term Admin UI with Server UI on all occations in this document
+
+Change #17.1
+- Implement §11.2 + §11.3 (show subscribers count/names), this is not supported in the current version
+
+
+Change #18 - cleanup Architecture.MD 
+- §1 diagram is broken. Root cause: ▶ is wider they any other character, use ">" instead and double check that vertical lines are drawn correctly
+  - User provisioning is no longer present/necessary to MySQL DB, remove this from diagram
+  - subdomain used is "noncey" non nonces
+- Replace nonces.yourdomain.com by noncey.tld on all occations in this document
+- Replace the term Admin UI with Server UI on all occations in this document
+- Drop Section Ports & defaults
+- Check and update §5 to reflect the current DB schema
+- Move §5.1 "Configuration status lifecycle" diagram to CONCEPT_CONFIGURATION.md under current §8c Publication flow
+- Drop §5.2 Subscription model
+- Drop §7e
+
+
+Change #18.1 Move to client documentation 
+- Section §7 of ARCHITECTURE.MD
+- Section §10 of ARCHITECTURE.MD
+
+Change #19 Client README.md
+- Add numbererd sections
+  §1 - Usage
+    - Move 'first time setup' and 'Using the extension' and 'configuration prompt' there
+    - Redo the latter two (they are out of date and not well structured according to the current version) and call them Configuration and Use During Login
+  §2 - Installation as Developer 
+    - Group the installation instruction "Installation (Windows)" and "Loading the extension .." there
+  §3 - Installation as user
+    - Describe that the use of build.sh/bat, and that the published extension can be retrieved (when the ChromeStore-Link is known)
+
+  - drop Section "reloading after changes"
+ 

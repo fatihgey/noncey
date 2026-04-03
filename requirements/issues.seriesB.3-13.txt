@@ -1,0 +1,36 @@
+
+Issue #3
+ Daemon, at /auth/unmatched/{id}, labels are stuck to old terminology, i.e. Btn "Create provider" should be "Create channel", "Provider tag" -> Channel name, "Create provider from this email" -> "Create channel from this email"
+
+Issue #4
+ Daemon: Workflow broken.
+   1. I create a configuration, I enter the configuration and can create a channel from scratch which is not the advised step. 
+   2. I go to unmatched mails, click on Inspect on one
+   3. In the form (/auth/unmatched/{id}), I can only pick a Target Configuration to create but not use an existing one. Maybe that's ok, and I was just surprised. However,if I choose to create a new configuration within the form, I am asked to enter a new version number. Please remove the version number
+
+Issue #5
+Daemon: "Email body" of an "Unmatched email" must be presented in plain text (not HTML), regardless of the original format of the email. I can see that HTML tags are striped but not @media data (typically embedded in style). Moreover, two (or more) subsequent newlines shall be merged into a single one.
+
+Issue #6
+In /auth/unmatched/{id}, Radio btn group "Sender", label "Outer sender (forwarder)" shall only be showed when there's an inner sender. If there's only one sender, it should say "Origin"
+
+Issue #7 
+Daemon: When a configuration is created, and no channel provided yet, it has status "draft", there's no such status as per CONFIGURATION_CONCEPT.md. Only after adding a channel the status becomes "incomplete". Replace draft -> incomplete (any occurance)
+
+Issue #8
+Client: Pulls only for active configurations from the daemon. An incomplete configuration cannot be active, but requires the client (successfully pulling for this configuration and) enhancing it to become valid/activatable
+
+Issue #9 
+Daemon: auth/configs/{id}
+Btn 'Activate' is disabled for incomplete configurations (I checked the source code), but hovering pointer and the colours of this btn look like an active button
+
+
+Issue #10
+Marketplace (auth/marketplace) must have per public configuration an "Open" action button (-> /auth/configs/{id}). In this view there should be delete button, that would only appear and work for admin users.
+
+Issue #11
+At /auth/configs/{id} for a public configuration: (1) Remove link to "Admin view" (2) Make rows of channel table clickable, executing an "Open", eg. auth/configs/(id)/channels/(id)/edit but without edit, should be only read (as it's public)
+
+Issue #12: auth/configs/(id)/channels/(id)/edit talks about Matchers. Remove all labels to Matcher/s, these are Header/s as per configuration concept v2. 
+
+Issue #13: auth/configs/(id) shows button labelled Dashboard change that to "Back"
