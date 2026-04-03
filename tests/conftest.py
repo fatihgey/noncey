@@ -30,7 +30,7 @@ import pytest
 
 TESTS_DIR  = Path(__file__).parent
 NONCEY_DIR = TESTS_DIR.parent
-DAEMON_DIR = NONCEY_DIR / 'noncey.daemon'
+DAEMON_DIR = NONCEY_DIR.parent / 'noncey.daemon'
 SCHEMA_SQL = DAEMON_DIR / 'schema.sql'
 
 # Daemon modules are imported inside fixtures; sys.path must be set first.
