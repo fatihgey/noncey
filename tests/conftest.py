@@ -132,9 +132,9 @@ def seed_data(tmp_env):
 
     cur = conn.execute(
         "INSERT INTO providers "
-        "  (user_id, tag, nonce_start_marker, nonce_end_marker) "
-        "VALUES (?, ?, ?, ?)",
-        (user_id, TEST_PROVIDER_TAG, TEST_START_MARKER, TEST_END_MARKER),
+        "  (user_id, tag, extract_mode, nonce_start_marker, nonce_end_marker) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (user_id, TEST_PROVIDER_TAG, 'markers', TEST_START_MARKER, TEST_END_MARKER),
     )
     provider_id = cur.lastrowid
 
