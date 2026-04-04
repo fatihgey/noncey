@@ -105,22 +105,22 @@ def test_dashboard_lists_test_user(logged_in_client, url):
 
 def test_create_user_success(admin_client, url, tmp_env):
     resp = admin_client.post(url('admin.admin_user_new'), data={
-        'username':  '_ui_new_',
+        'username':  'uinew',
         'password':  'strongpassword1',
         'password2': 'strongpassword1',
     }, follow_redirects=True)
     assert resp.status_code == 200
-    assert b'_ui_new_' in resp.data
+    assert b'uinew' in resp.data
 
     conn = _open_db(tmp_env['db_path'])
-    conn.execute("DELETE FROM users WHERE username=?", ('_ui_new_',))
+    conn.execute("DELETE FROM users WHERE username=?", ('uinew',))
     conn.commit()
     conn.close()
 
 
 def test_create_user_password_mismatch(admin_client, url):
     resp = admin_client.post(url('admin.admin_user_new'), data={
-        'username':  '_mismatch_',
+        'username':  'mismatch',
         'password':  'aaa',
         'password2': 'bbb',
     }, follow_redirects=True)
@@ -130,7 +130,7 @@ def test_create_user_password_mismatch(admin_client, url):
 
 def test_create_user_empty_password(admin_client, url):
     resp = admin_client.post(url('admin.admin_user_new'), data={
-        'username':  '_emptypass_',
+        'username':  'emptypass',
         'password':  '',
         'password2': '',
     }, follow_redirects=True)
@@ -140,26 +140,26 @@ def test_create_user_empty_password(admin_client, url):
 
 def test_create_duplicate_user(admin_client, url, tmp_env):
     admin_client.post(url('admin.admin_user_new'), data={
-        'username': '_dup_test_', 'password': 'pw1234', 'password2': 'pw1234',
+        'username': 'duptest', 'password': 'pw1234', 'password2': 'pw1234',
     })
     resp = admin_client.post(url('admin.admin_user_new'), data={
-        'username': '_dup_test_', 'password': 'pw1234', 'password2': 'pw1234',
+        'username': 'duptest', 'password': 'pw1234', 'password2': 'pw1234',
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert b'already exists' in resp.data
 
     conn = _open_db(tmp_env['db_path'])
-    conn.execute("DELETE FROM users WHERE username=?", ('_dup_test_',))
+    conn.execute("DELETE FROM users WHERE username=?", ('duptest',))
     conn.commit()
     conn.close()
 
 
 def test_edit_user(admin_client, url, tmp_env):
     admin_client.post(url('admin.admin_user_new'), data={
-        'username': '_edit_me_', 'password': 'pw1234', 'password2': 'pw1234',
+        'username': 'editme', 'password': 'pw1234', 'password2': 'pw1234',
     })
     conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute("SELECT id FROM users WHERE username=?", ('_edit_me_',)).fetchone()
+    row  = conn.execute("SELECT id FROM users WHERE username=?", ('editme',)).fetchone()
     conn.close()
     assert row, 'user was not created'
 
@@ -181,10 +181,10 @@ def test_edit_user(admin_client, url, tmp_env):
 
 def test_delete_user(admin_client, url, tmp_env):
     admin_client.post(url('admin.admin_user_new'), data={
-        'username': '_del_me_', 'password': 'pw1234', 'password2': 'pw1234',
+        'username': 'delme', 'password': 'pw1234', 'password2': 'pw1234',
     })
     conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute("SELECT id FROM users WHERE username=?", ('_del_me_',)).fetchone()
+    row  = conn.execute("SELECT id FROM users WHERE username=?", ('delme',)).fetchone()
     conn.close()
     assert row, 'user was not created'
 
@@ -196,7 +196,7 @@ def test_delete_user(admin_client, url, tmp_env):
     assert b'deleted' in resp.data.lower()
 
     conn = _open_db(tmp_env['db_path'])
-    gone = conn.execute("SELECT id FROM users WHERE username=?", ('_del_me_',)).fetchone()
+    gone = conn.execute("SELECT id FROM users WHERE username=?", ('delme',)).fetchone()
     conn.close()
     assert gone is None
 
