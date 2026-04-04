@@ -30,6 +30,8 @@ if [[ "${1-}" == '--all' ]]; then
     TESTS+=(
         daemon/test_04_admin.py
         daemon/test_05_mail.py
+        daemon/test_06_config.py
+        daemon/test_07_api_configs.py
         "client.chromeextension/test_10_autofill.py"
     )
     shift
