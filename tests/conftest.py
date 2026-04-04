@@ -25,6 +25,7 @@ from pathlib import Path
 
 import bcrypt
 import pytest
+from flask import url_for
 
 # ── Path constants ─────────────────────────────────────────────────────────────
 
@@ -165,6 +166,24 @@ def flask_app(tmp_env, seed_data):
     yield app
 
     db_module._cfg = None
+
+
+@pytest.fixture(scope='session')
+def url(flask_app):
+    """Resolve Flask endpoint names to URL paths via url_for().
+
+    Use this instead of hardcoding paths in tests — if a route moves in
+    admin.py or app.py, url_for() picks up the change automatically.
+
+    Usage::
+
+        def test_something(client, url):
+            resp = client.get(url('admin.dashboard'))
+    """
+    def resolve(endpoint, **kwargs):
+        with flask_app.test_request_context():
+            return url_for(endpoint, **kwargs)
+    return resolve
 
 
 @pytest.fixture

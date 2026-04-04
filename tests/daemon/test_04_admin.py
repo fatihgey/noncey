@@ -1,40 +1,110 @@
 """
-test_04_admin — Admin Blueprint CRUD via Flask test client.
+test_04_admin — Server UI: access, authentication, and user management.
 
-The admin Blueprint has no auth layer (Apache handles that in production),
-so all routes are directly accessible from the test client.
+All routes sit under /auth/ and require a Flask session cookie
+(managed entirely by Flask — no Apache BasicAuth).
+Admin-only routes (/auth/admin/) additionally require is_admin=1.
 
-Each test that creates DB rows is responsible for cleaning them up, keeping
-tests independent of execution order.
+URLs are resolved via the url() fixture (url_for under the hood) so that
+path changes in admin.py never require updates here.
 """
 
+import bcrypt as _bcrypt
 import pytest
 
-from conftest import TEST_USERNAME, _open_db
+from conftest import TEST_PASSWORD, TEST_USERNAME, _open_db
+
+
+# ── Fixtures ──────────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def logged_in_client(client, url):
+    """Test client with an active session for TEST_USERNAME."""
+    client.post(url('admin.auth_login'), data={
+        'username': TEST_USERNAME,
+        'password': TEST_PASSWORD,
+    })
+    yield client
+
+
+@pytest.fixture
+def admin_client(client, url, tmp_env, seed_data):
+    """Test client logged in as TEST_USERNAME with is_admin=1."""
+    conn = _open_db(tmp_env['db_path'])
+    conn.execute("UPDATE users SET is_admin=1 WHERE id=?", (seed_data['user_id'],))
+    conn.commit()
+    conn.close()
+
+    client.post(url('admin.auth_login'), data={
+        'username': TEST_USERNAME,
+        'password': TEST_PASSWORD,
+    })
+    yield client
+
+    conn = _open_db(tmp_env['db_path'])
+    conn.execute("UPDATE users SET is_admin=0 WHERE id=?", (seed_data['user_id'],))
+    conn.commit()
+    conn.close()
+
+
+# ── Server UI Authentication ──────────────────────────────────────────────────
+
+def test_login_returns_session(client, url):
+    resp = client.post(url('admin.auth_login'), data={
+        'username': TEST_USERNAME,
+        'password': TEST_PASSWORD,
+    })
+    assert resp.status_code == 302
+    # Confirm session is active: protected route now returns 200.
+    assert client.get(url('admin.dashboard')).status_code == 200
+
+
+def test_login_wrong_password_rejected(client, url):
+    resp = client.post(url('admin.auth_login'), data={
+        'username': TEST_USERNAME,
+        'password': 'wrong-password',
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert b'Invalid' in resp.data
+
+
+def test_login_unknown_user_rejected(client, url):
+    resp = client.post(url('admin.auth_login'), data={
+        'username': 'nonexistent-xyz',
+        'password': 'whatever',
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert b'Invalid' in resp.data
+
+
+def test_dashboard_requires_auth(client, url):
+    resp = client.get(url('admin.dashboard'))
+    assert resp.status_code == 302
+    assert 'login' in resp.headers['Location']
+
+
+def test_logout_clears_session(logged_in_client, url):
+    resp = logged_in_client.post(url('admin.auth_logout'))
+    assert resp.status_code == 302
+    # Session is now gone: dashboard redirects to login again.
+    assert logged_in_client.get(url('admin.dashboard')).status_code == 302
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
-def test_dashboard_ok(client):
-    resp = client.get('/noncey/')
-    assert resp.status_code == 200
+def test_dashboard_ok(logged_in_client, url):
+    assert logged_in_client.get(url('admin.dashboard')).status_code == 200
 
 
-def test_dashboard_trailing_slash_redirect(client):
-    resp = client.get('/noncey')
-    # Either 200 or a redirect to /noncey/ is acceptable.
-    assert resp.status_code in (200, 301, 308)
-
-
-def test_dashboard_lists_test_user(client):
-    resp = client.get('/noncey/')
+def test_dashboard_lists_test_user(logged_in_client, url):
+    resp = logged_in_client.get(url('admin.dashboard'))
     assert TEST_USERNAME.encode() in resp.data
 
 
-# ── User create ───────────────────────────────────────────────────────────────
+# ── User Management (Admin) ───────────────────────────────────────────────────
 
-def test_create_user_success(client, tmp_env):
-    resp = client.post('/noncey/users/new', data={
+def test_create_user_success(admin_client, url, tmp_env):
+    resp = admin_client.post(url('admin.admin_user_new'), data={
         'username':  '_ui_new_',
         'password':  'strongpassword1',
         'password2': 'strongpassword1',
@@ -43,13 +113,13 @@ def test_create_user_success(client, tmp_env):
     assert b'_ui_new_' in resp.data
 
     conn = _open_db(tmp_env['db_path'])
-    conn.execute("DELETE FROM users WHERE username = ?", ('_ui_new_',))
+    conn.execute("DELETE FROM users WHERE username=?", ('_ui_new_',))
     conn.commit()
     conn.close()
 
 
-def test_create_user_password_mismatch(client):
-    resp = client.post('/noncey/users/new', data={
+def test_create_user_password_mismatch(admin_client, url):
+    resp = admin_client.post(url('admin.admin_user_new'), data={
         'username':  '_mismatch_',
         'password':  'aaa',
         'password2': 'bbb',
@@ -58,185 +128,104 @@ def test_create_user_password_mismatch(client):
     assert b'do not match' in resp.data
 
 
-def test_create_user_empty_password(client):
-    resp = client.post('/noncey/users/new', data={
+def test_create_user_empty_password(admin_client, url):
+    resp = admin_client.post(url('admin.admin_user_new'), data={
         'username':  '_emptypass_',
         'password':  '',
         'password2': '',
     }, follow_redirects=True)
     assert resp.status_code == 200
-    assert b'empty' in resp.data.lower() or b'required' in resp.data.lower()
+    assert b'not be empty' in resp.data
 
 
-def test_create_duplicate_user(client, tmp_env):
-    # First creation succeeds.
-    client.post('/noncey/users/new', data={
-        'username': '_dup_test_', 'password': 'pw', 'password2': 'pw',
+def test_create_duplicate_user(admin_client, url, tmp_env):
+    admin_client.post(url('admin.admin_user_new'), data={
+        'username': '_dup_test_', 'password': 'pw1234', 'password2': 'pw1234',
     })
-    # Second creation for the same username must be rejected.
-    resp = client.post('/noncey/users/new', data={
-        'username': '_dup_test_', 'password': 'pw', 'password2': 'pw',
+    resp = admin_client.post(url('admin.admin_user_new'), data={
+        'username': '_dup_test_', 'password': 'pw1234', 'password2': 'pw1234',
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert b'already exists' in resp.data
 
     conn = _open_db(tmp_env['db_path'])
-    conn.execute("DELETE FROM users WHERE username = ?", ('_dup_test_',))
+    conn.execute("DELETE FROM users WHERE username=?", ('_dup_test_',))
     conn.commit()
     conn.close()
 
 
-# ── User delete ───────────────────────────────────────────────────────────────
-
-def test_delete_user(client, tmp_env):
-    # Create a user via the UI, then delete it via the UI.
-    client.post('/noncey/users/new', data={
-        'username': '_del_me_', 'password': 'pw', 'password2': 'pw',
+def test_edit_user(admin_client, url, tmp_env):
+    admin_client.post(url('admin.admin_user_new'), data={
+        'username': '_edit_me_', 'password': 'pw1234', 'password2': 'pw1234',
     })
     conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute(
-        "SELECT id FROM users WHERE username = ?", ('_del_me_',)
-    ).fetchone()
+    row  = conn.execute("SELECT id FROM users WHERE username=?", ('_edit_me_',)).fetchone()
     conn.close()
     assert row, 'user was not created'
 
-    resp = client.post(f'/noncey/users/{row[0]}/delete', follow_redirects=True)
+    resp = admin_client.post(
+        url('admin.admin_user_edit', user_id=row[0]),
+        data={'email': 'edited@example.com', 'is_admin': ''},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert b'updated' in resp.data.lower()
+
+    conn = _open_db(tmp_env['db_path'])
+    updated = conn.execute("SELECT email FROM users WHERE id=?", (row[0],)).fetchone()
+    conn.execute("DELETE FROM users WHERE id=?", (row[0],))
+    conn.commit()
+    conn.close()
+    assert updated['email'] == 'edited@example.com'
+
+
+def test_delete_user(admin_client, url, tmp_env):
+    admin_client.post(url('admin.admin_user_new'), data={
+        'username': '_del_me_', 'password': 'pw1234', 'password2': 'pw1234',
+    })
+    conn = _open_db(tmp_env['db_path'])
+    row  = conn.execute("SELECT id FROM users WHERE username=?", ('_del_me_',)).fetchone()
+    conn.close()
+    assert row, 'user was not created'
+
+    resp = admin_client.post(
+        url('admin.admin_user_delete', user_id=row[0]),
+        follow_redirects=True,
+    )
     assert resp.status_code == 200
     assert b'deleted' in resp.data.lower()
 
     conn = _open_db(tmp_env['db_path'])
-    gone = conn.execute(
-        "SELECT id FROM users WHERE username = ?", ('_del_me_',)
-    ).fetchone()
+    gone = conn.execute("SELECT id FROM users WHERE username=?", ('_del_me_',)).fetchone()
     conn.close()
     assert gone is None
 
 
-# ── Provider CRUD ─────────────────────────────────────────────────────────────
+# ── Account (Self-service) ────────────────────────────────────────────────────
 
-@pytest.fixture
-def provider_owner(tmp_env):
-    """A dedicated user for provider CRUD tests; deleted on teardown."""
-    import bcrypt
-    pw = bcrypt.hashpw(b'pw', bcrypt.gensalt()).decode()
+def test_change_password_success(logged_in_client, url, tmp_env, seed_data):
+    resp = logged_in_client.post(url('admin.account_password'), data={
+        'current_password': TEST_PASSWORD,
+        'password':         'new-test-pw-99',
+        'password2':        'new-test-pw-99',
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert b'Password changed' in resp.data
+
+    # Restore original password so subsequent tests can still log in.
+    orig_hash = _bcrypt.hashpw(TEST_PASSWORD.encode(), _bcrypt.gensalt()).decode()
     conn = _open_db(tmp_env['db_path'])
-    cur  = conn.execute(
-        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-        ('_prov_owner_', pw),
-    )
-    user_id = cur.lastrowid
+    conn.execute("UPDATE users SET password_hash=? WHERE id=?",
+                 (orig_hash, seed_data['user_id']))
     conn.commit()
     conn.close()
-    yield user_id
-    conn = _open_db(tmp_env['db_path'])
-    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    conn.commit()
-    conn.close()
 
 
-def test_create_provider(client, provider_owner):
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/new',
-        data={
-            'tag':                'smoke-prov',
-            'nonce_start_marker': 'CODE:',
-            'nonce_end_marker':   ':END',
-        },
-        follow_redirects=True,
-    )
+def test_change_password_wrong_current_rejected(logged_in_client, url):
+    resp = logged_in_client.post(url('admin.account_password'), data={
+        'current_password': 'definitely-wrong',
+        'password':         'new-pw',
+        'password2':        'new-pw',
+    }, follow_redirects=True)
     assert resp.status_code == 200
-    assert b'smoke-prov' in resp.data
-
-
-def test_create_provider_missing_tag_rejected(client, provider_owner):
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/new',
-        data={'tag': '', 'nonce_start_marker': 'X:'},
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b'required' in resp.data.lower()
-
-
-def test_delete_provider(client, provider_owner, tmp_env):
-    # Create provider, get its ID, then delete it.
-    client.post(
-        f'/noncey/users/{provider_owner}/providers/new',
-        data={'tag': 'del-prov', 'nonce_start_marker': 'X:'},
-    )
-    conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute(
-        "SELECT id FROM providers WHERE user_id = ? AND tag = ?",
-        (provider_owner, 'del-prov'),
-    ).fetchone()
-    conn.close()
-    assert row
-
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/{row[0]}/delete',
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b'del-prov' not in resp.data
-
-
-# ── Matcher CRUD ──────────────────────────────────────────────────────────────
-
-@pytest.fixture
-def provider_with_matchers(client, provider_owner, tmp_env):
-    """Create a provider; yield its ID; teardown is handled by provider_owner CASCADE."""
-    client.post(
-        f'/noncey/users/{provider_owner}/providers/new',
-        data={'tag': 'matcher-test', 'nonce_start_marker': 'OTP:'},
-    )
-    conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute(
-        "SELECT id FROM providers WHERE user_id = ? AND tag = ?",
-        (provider_owner, 'matcher-test'),
-    ).fetchone()
-    conn.close()
-    assert row
-    yield row[0]
-
-
-def test_add_matcher(client, provider_owner, provider_with_matchers):
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/{provider_with_matchers}/matchers/new',
-        data={'sender_email': 'smoke@example.com', 'subject_pattern': ''},
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b'smoke@example.com' in resp.data
-
-
-def test_add_matcher_both_empty_rejected(client, provider_owner, provider_with_matchers):
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/{provider_with_matchers}/matchers/new',
-        data={'sender_email': '', 'subject_pattern': ''},
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b'At least one' in resp.data
-
-
-def test_delete_matcher(client, provider_owner, provider_with_matchers, tmp_env):
-    client.post(
-        f'/noncey/users/{provider_owner}/providers/{provider_with_matchers}/matchers/new',
-        data={'sender_email': 'del@example.com', 'subject_pattern': ''},
-    )
-    conn = _open_db(tmp_env['db_path'])
-    row  = conn.execute(
-        "SELECT id FROM provider_matchers "
-        "WHERE provider_id = ? AND sender_email = ?",
-        (provider_with_matchers, 'del@example.com'),
-    ).fetchone()
-    conn.close()
-    assert row
-
-    resp = client.post(
-        f'/noncey/users/{provider_owner}/providers/'
-        f'{provider_with_matchers}/matchers/{row[0]}/delete',
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b'del@example.com' not in resp.data
+    assert b'incorrect' in resp.data.lower()
