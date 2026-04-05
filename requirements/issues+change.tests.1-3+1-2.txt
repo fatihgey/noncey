@@ -1,0 +1,25 @@
+Issue #1: 
+Many tests are probably outdated. Please read the .MD files of the two components in noncey.daemon and noncey.client.chromeextension, and cross check the tests (that are explained in TESTS.md)
+A few examples
+- Admin blueprint / Admin UI -> Server UI
+- Authentication is no longer provided by Apache
+- Paths are /auth/... not /noncey
+- Provider has been renamed to Channel
+- Matcher has been renamed to Header
+
+Issue #2: 
+These tests cover CRUD with user, "provider" and "matcher" (actually only CRD), please add U (as in edit). 
+
+Issue #3: 
+Configuration is a core concept of noncey now, the tile of TESTS.md §1.1 doesnt fit anymore. Call it Server UI Access and User Management.
+(note terminology: Daemon component hosts the Server UI)
+
+Test Change #1:
+Remove "Provider" creation part from the cluster of UI Access and User Mgmt and move it to the following: Add a cluster called Configuration, subsections should reflect on flows described in daemon's git repo/CONCEPT_CONFIGURATION.md (§8). Note that these tests mock the chrome extension part, and only test the daemon.
+
+Confirmation #1:
+TESTS.md §1.2 and §1.3 are fine, no change here.
+
+Test Change #2: 
+Add tests that emulate client: pull data (as part of the sync), push data (as part of the sync) - confirm its affect at the daemon
+

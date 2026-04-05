@@ -1,11 +1,13 @@
-W1
-Develop an Android app to extract SMS as another provider channel
+W1 - DONE
+Goal: Develop an Android app to extract SMS as another provider channel
 Configuration: 
  - [Android App] Mark SMS that correspond to Unmatched
  - Synching with the Daemon, these SMS are displayed as Unmatched (type SMS not type email); note that his is a copy of the SMS. Dismissing this copy on the Daemon doesnt delete the original SMS
  - Analogue to the configuration from an unmatched, I can configure at the Daemon how to extract the NONCE. As Headers there's only the Sender phone number.
+ - Analogue to the chrome client, Android App will sync need-to-know data (not for performing configuration but matching) such that it will call a REST API on the daemon, transmitting the entire SMS (including header, i.e. sender, time of reception)
+ - Daemon will keep an archive copy (similar to that for emails) in a dedicated directory w/ same retention as for emails.
  - [Android App] Can see Provider configurations (only with a SMS channel) and can activate/deactivate those. Activation is global (at Daemon, i.e. email channels and at the Client), that is, if the phone deactivates a configuration, it deactive on all ends of this application
- - [Android App] It can also choose SMS and funnel into an active configuration, i.e. if the sender didnt match, manually trigger the process of this SMS
+ - [Android App] It can also choose an SMS and funnel into an active configuration, i.e. if the sender didnt match, manually trigger the process of this SMS
 
 W2 
 Carve out the daemon from the Postfix server
@@ -21,9 +23,9 @@ Automation of deployment/installation:
 - daemon-repo:/deployment should hold a/multiple kubernetes configuation file(s)
 
 
-W3 Testing
+W3 Testing - DONE
 
-Please summarize the tests that are build and stored at /c/Claude/noncey/tests. Cluster them according to component to be tested (i.e. daemon, client, e2e (daemon and client)), and (if reasonable) to function groups, i.e. for daemon: configuration mgmt, extracting nonce from input, serving nonce to client, sync with client (currently not covered, leave as is), self maintenance (lifecycle cleanups, etc; currently not covered, describe it as N/A). Store this information in an MD file (TESTS.md).
+Please summarize the tests that are build and stored at /c/Claude/noncey/tests. Cluster them according to component to be tested (i.e. daemon, client, e2e (daemon and client)), and (if reasonable) to function groups, i.e. for daemon: configuration mgmt, extracting nonce from input, serving nonce to client, sync with client (currently not covered, leave as is), self maintenance (lifecycle cleanups, etc; currently not covered, describe it as N/A). Store this information in an MD file (TESTS.md in the noncey git repo folder).
 
 Current tests probably do not cover novell features (implementations §7-§10). Please add tests to cover the new features
 
