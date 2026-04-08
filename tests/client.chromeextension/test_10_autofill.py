@@ -229,6 +229,9 @@ def test_extension_autofills_otp_field(
     expires     = now + timedelta(hours=2)
 
     conn = _open_db(tmp_env['db_path'])
+    # tmp_env/seed_data are session-scoped, so earlier tests may have left
+    # nonces in the DB.  Clear them so the extension sees exactly one nonce.
+    conn.execute("DELETE FROM nonces WHERE user_id = ?", (seed_data['user_id'],))
     cur  = conn.execute(
         "INSERT INTO nonces "
         "  (user_id, provider_id, nonce_value, received_at, expires_at) "
