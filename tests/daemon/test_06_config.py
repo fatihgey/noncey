@@ -426,6 +426,7 @@ def test_submit_config_for_review(logged_in_client, url, tmp_env, seed_data):
     try:
         resp = logged_in_client.post(
             url('admin.config_submit', config_id=config_id),
+            data={'tos_accepted': '1'},
             follow_redirects=True,
         )
         assert resp.status_code == 200

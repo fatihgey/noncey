@@ -51,7 +51,10 @@ def test_ingest_writes_nonce_to_db(tmp_env, seed_data):
     ).fetchone()
     conn.close()
 
-    assert row is not None, 'no nonce row found after ingest'
+    assert row is not None, (
+        'no nonce row found after ingest\n'
+        f'ingest stderr: {result.stderr.decode()!r}'
+    )
     assert row['nonce_value'] == nonce_value
 
 

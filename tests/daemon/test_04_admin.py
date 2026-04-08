@@ -204,7 +204,7 @@ def test_delete_user(admin_client, url, tmp_env):
 # ── Account (Self-service) ────────────────────────────────────────────────────
 
 def test_change_password_success(logged_in_client, url, tmp_env, seed_data):
-    resp = logged_in_client.post(url('admin.account_password'), data={
+    resp = logged_in_client.post(url('admin.account_settings'), data={
         'current_password': TEST_PASSWORD,
         'password':         'new-test-pw-99',
         'password2':        'new-test-pw-99',
@@ -222,7 +222,7 @@ def test_change_password_success(logged_in_client, url, tmp_env, seed_data):
 
 
 def test_change_password_wrong_current_rejected(logged_in_client, url):
-    resp = logged_in_client.post(url('admin.account_password'), data={
+    resp = logged_in_client.post(url('admin.account_settings'), data={
         'current_password': 'definitely-wrong',
         'password':         'new-pw',
         'password2':        'new-pw',
