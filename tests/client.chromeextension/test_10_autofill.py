@@ -85,10 +85,18 @@ def ext_context(playwright, live_flask, testserver_proc):
     # Locate the full Chromium binary explicitly — headless=False alone may
     # still pick up chrome-headless-shell on some Playwright installs, and
     # the headless shell does not support extensions or service workers.
-    _pattern = str(Path.home() / '.cache/ms-playwright/chromium-*/chrome-linux/chrome')
-    _candidates = sorted(_glob.glob(_pattern))
-    _exe = _candidates[-1] if _candidates else None  # newest build
-    print(f'\n[ext_context] chromium exe: {_exe}')
+    _cache = Path.home() / '.cache/ms-playwright'
+    _dirs  = sorted(_cache.iterdir()) if _cache.exists() else []
+    print(f'\n[ext_context] ms-playwright dirs: {[d.name for d in _dirs]}')
+    # Try both chrome-linux and chrome-linux64 subdirectory names.
+    _exe = None
+    for _sub in ('chrome-linux64/chrome', 'chrome-linux/chrome', 'chrome'):
+        _pattern = str(_cache / f'chromium-*/{_sub}')
+        _hits = sorted(_glob.glob(_pattern))
+        if _hits:
+            _exe = _hits[-1]
+            break
+    print(f'[ext_context] chromium exe: {_exe}')
 
     _kwargs = dict(
         headless=False,
@@ -100,8 +108,12 @@ def ext_context(playwright, live_flask, testserver_proc):
         ],
         ignore_https_errors=True,
     )
-    if _exe:
-        _kwargs['executable_path'] = _exe
+    if not _exe:
+        pytest.skip(
+            'Full Chromium binary not found under ~/.cache/ms-playwright/chromium-*/. '
+            'Run: playwright install chromium'
+        )
+    _kwargs['executable_path'] = _exe
 
     ctx = playwright.chromium.launch_persistent_context('', **_kwargs)
     yield ctx
