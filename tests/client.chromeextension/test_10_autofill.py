@@ -81,12 +81,16 @@ def live_flask(flask_app):
 @pytest.fixture(scope='module')
 def ext_context(playwright, live_flask, testserver_proc):
     """Chromium browser context with the unpacked extension loaded."""
-    # headless=False + --headless=new forces the full Chromium binary which
-    # supports extensions and service workers.  chrome-headless-shell (the
-    # default when headless=True) is a stripped binary that does not support
-    # them and silently prevents service worker registration.
-    ctx = playwright.chromium.launch_persistent_context(
-        '',
+    import glob as _glob
+    # Locate the full Chromium binary explicitly — headless=False alone may
+    # still pick up chrome-headless-shell on some Playwright installs, and
+    # the headless shell does not support extensions or service workers.
+    _pattern = str(Path.home() / '.cache/ms-playwright/chromium-*/chrome-linux/chrome')
+    _candidates = sorted(_glob.glob(_pattern))
+    _exe = _candidates[-1] if _candidates else None  # newest build
+    print(f'\n[ext_context] chromium exe: {_exe}')
+
+    _kwargs = dict(
         headless=False,
         args=[
             '--headless=new',
@@ -96,6 +100,10 @@ def ext_context(playwright, live_flask, testserver_proc):
         ],
         ignore_https_errors=True,
     )
+    if _exe:
+        _kwargs['executable_path'] = _exe
+
+    ctx = playwright.chromium.launch_persistent_context('', **_kwargs)
     yield ctx
     ctx.close()
 
@@ -145,7 +153,12 @@ def configured_extension(ext_context):
             sw = workers[0]
             break
         _time.sleep(0.3)
-    assert sw is not None, 'Extension service worker did not register within 15 s'
+    assert sw is not None, (
+        'Extension service worker did not register within 15 s\n'
+        f'pages in context: {[p.url for p in ext_context.pages]}\n'
+        f'background_pages: {ext_context.background_pages}\n'
+        f'service_workers:  {ext_context.service_workers}'
+    )
     sw.evaluate(f"""() => chrome.storage.sync.set({{
         server:    '{DAEMON_BASE}',
         username:  '{TEST_USERNAME}',

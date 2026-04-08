@@ -8,8 +8,11 @@
 # Usage:
 #   ./run_smoke.sh                         # quick smoke (tests 01-03)
 #   ./run_smoke.sh --all                   # all tests (skips mail + extension unless flags set)
+#   ./run_smoke.sh --extension             # extension test only
 #   NONCEY_TEST_MAIL=1 ./run_smoke.sh --all        # include live mail test
 #   NONCEY_TEST_EXTENSION=1 ./run_smoke.sh --all   # include extension test
+#   NONCEY_TEST_MAIL_CONF=/opt/noncey/daemon/etc/noncey.conf \
+#     NONCEY_TEST_MAIL=1 ./run_smoke.sh --all
 #
 # Exit code mirrors pytest: 0 = all passed, non-zero = failure or error.
 
@@ -35,6 +38,10 @@ if [[ "${1-}" == '--all' ]]; then
         "client.chromeextension/test_10_autofill.py"
     )
     shift
+elif [[ "${1-}" == '--extension' ]] || [[ "${NONCEY_TEST_EXTENSION-}" == '1' && "${1-}" == '' ]]; then
+    export NONCEY_TEST_EXTENSION=1
+    TESTS=("client.chromeextension/test_10_autofill.py")
+    [[ "${1-}" == '--extension' ]] && shift
 fi
 
 exec pytest "${PYTEST_ARGS[@]}" "${TESTS[@]}" "$@"
