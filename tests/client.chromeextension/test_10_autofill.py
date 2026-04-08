@@ -98,22 +98,27 @@ def ext_context(playwright, live_flask, testserver_proc):
             break
     print(f'[ext_context] chromium exe: {_exe}')
 
-    _kwargs = dict(
-        headless=False,
-        args=[
-            '--headless=new',
-            f'--disable-extensions-except={EXT_DIR}',
-            f'--load-extension={EXT_DIR}',
-            '--no-sandbox',
-        ],
-        ignore_https_errors=True,
-    )
     if not _exe:
         pytest.skip(
             'Full Chromium binary not found under ~/.cache/ms-playwright/chromium-*/. '
             'Run: playwright install chromium'
         )
-    _kwargs['executable_path'] = _exe
+
+    _kwargs = dict(
+        executable_path=_exe,
+        headless=False,
+        # Playwright injects --disable-extensions by default which prevents
+        # --load-extension from working. Remove it explicitly.
+        ignore_default_args=['--disable-extensions'],
+        args=[
+            '--headless=new',
+            f'--disable-extensions-except={EXT_DIR}',
+            f'--load-extension={EXT_DIR}',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+        ],
+        ignore_https_errors=True,
+    )
 
     ctx = playwright.chromium.launch_persistent_context('', **_kwargs)
     yield ctx
