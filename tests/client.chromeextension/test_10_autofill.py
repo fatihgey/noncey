@@ -35,7 +35,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 TESTS_DIR     = Path(__file__).parent.parent
-EXT_DIR       = TESTS_DIR.parent / 'noncey.client.chromeextension'
+# tests/ lives inside noncey/, which is a sibling of noncey.client.chromeextension/
+# under the common C:\Claude\ root — so we need two levels up from tests/.
+EXT_DIR       = TESTS_DIR.parent.parent / 'noncey.client.chromeextension'
 TESTPAGE_PORT = 18080
 DAEMON_PORT   = 15000
 DAEMON_BASE   = f'http://127.0.0.1:{DAEMON_PORT}'
@@ -104,6 +106,10 @@ def ext_context(playwright, live_flask, testserver_proc):
             'Full Chromium binary not found under ~/.cache/ms-playwright/chromium-*/. '
             'Run: playwright install chromium'
         )
+
+    if not EXT_DIR.exists():
+        pytest.skip(f'Extension directory not found: {EXT_DIR}')
+    print(f'[ext_context] ext_dir: {EXT_DIR} (exists={EXT_DIR.exists()})')
 
     _user_data_dir = tempfile.mkdtemp(prefix='pw-ext-')
     print(f'[ext_context] user_data_dir: {_user_data_dir}')
