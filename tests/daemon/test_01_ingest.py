@@ -39,6 +39,19 @@ def test_ingest_writes_nonce_to_db(tmp_env, seed_data):
     eml         = EML_TEMPLATE.format(nonce=nonce_value).encode()
     recipient   = f'nonce-{TEST_USERNAME}@{TEST_DOMAIN}'
 
+    # Verify seed data is visible before launching subprocess.
+    conn = _open_db(tmp_env['db_path'])
+    _prov = conn.execute(
+        "SELECT p.id, p.channel_type, p.extract_mode, p.user_id, "
+        "       pm.sender_email, pm.subject_pattern "
+        "FROM providers p "
+        "LEFT JOIN provider_matchers pm ON pm.provider_id = p.id "
+        "WHERE p.user_id = ?",
+        (seed_data['user_id'],),
+    ).fetchall()
+    conn.close()
+    _prov_dump = [dict(r) for r in _prov]
+
     result = _run_ingest(recipient, eml, tmp_env['conf_path'])
     assert result.returncode == 0, result.stderr.decode()
 
@@ -53,7 +66,8 @@ def test_ingest_writes_nonce_to_db(tmp_env, seed_data):
 
     assert row is not None, (
         'no nonce row found after ingest\n'
-        f'ingest stderr: {result.stderr.decode()!r}'
+        f'ingest stderr: {result.stderr.decode()!r}\n'
+        f'seed providers visible before ingest: {_prov_dump}'
     )
     assert row['nonce_value'] == nonce_value
 
