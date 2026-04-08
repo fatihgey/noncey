@@ -128,9 +128,24 @@ def configured_extension(ext_context):
         'selector':    '#otp-field',
     }])
 
-    # Service worker may already be registered or may still be starting up.
-    workers = ext_context.service_workers
-    sw = workers[0] if workers else ext_context.wait_for_event('serviceworker', timeout=10_000)
+    # Navigate to a blank page to give the browser a chance to activate the
+    # extension service worker (required on some Chromium builds).
+    _p = ext_context.new_page()
+    _p.goto('about:blank')
+    _p.close()
+
+    # Poll for the service worker — it may already be registered or may take
+    # a moment; wait_for_event() only catches future events so polling is safer.
+    import time as _time
+    _deadline = _time.monotonic() + 15
+    sw = None
+    while _time.monotonic() < _deadline:
+        workers = ext_context.service_workers
+        if workers:
+            sw = workers[0]
+            break
+        _time.sleep(0.3)
+    assert sw is not None, 'Extension service worker did not register within 15 s'
     sw.evaluate(f"""() => chrome.storage.sync.set({{
         server:    '{DAEMON_BASE}',
         username:  '{TEST_USERNAME}',
