@@ -123,7 +123,7 @@ def configured_extension(ext_context):
         'selector':    '#otp-field',
     }])
 
-    sw = ext_context.service_workers()[0]
+    sw = ext_context.service_workers[0]
     sw.evaluate(f"""() => chrome.storage.sync.set({{
         server:    '{DAEMON_BASE}',
         username:  '{TEST_USERNAME}',
