@@ -22,6 +22,7 @@ import os
 import secrets
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -104,6 +105,9 @@ def ext_context(playwright, live_flask, testserver_proc):
             'Run: playwright install chromium'
         )
 
+    _user_data_dir = tempfile.mkdtemp(prefix='pw-ext-')
+    print(f'[ext_context] user_data_dir: {_user_data_dir}')
+
     _kwargs = dict(
         executable_path=_exe,
         headless=False,
@@ -120,7 +124,25 @@ def ext_context(playwright, live_flask, testserver_proc):
         ignore_https_errors=True,
     )
 
-    ctx = playwright.chromium.launch_persistent_context('', **_kwargs)
+    ctx = playwright.chromium.launch_persistent_context(_user_data_dir, **_kwargs)
+
+    # Capture any service worker registrations immediately.
+    _sw_urls: list[str] = []
+    ctx.on('serviceworker', lambda sw: (_sw_urls.append(sw.url), print(f'[ext_context] SW registered: {sw.url}')))
+
+    # Navigate to a blank page and capture console output — background.js logs
+    # "[noncey] service worker starting" which should appear here if the SW loads.
+    _diag_page = ctx.new_page()
+    _diag_page.on('console', lambda msg: print(f'[browser-console] {msg.type}: {msg.text}'))
+    _diag_page.goto('about:blank')
+
+    # Brief pause to let the extension activate.
+    time.sleep(2)
+    print(f'[ext_context] after 2s — sw_urls={_sw_urls}, '
+          f'service_workers={[w.url for w in ctx.service_workers]}, '
+          f'background_pages={[p.url for p in ctx.background_pages]}')
+
+    _diag_page.close()
     yield ctx
     ctx.close()
 
