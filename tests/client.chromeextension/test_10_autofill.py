@@ -123,7 +123,10 @@ def configured_extension(ext_context):
         'selector':    '#otp-field',
     }])
 
-    sw = ext_context.service_workers[0]
+    # Wait for the extension service worker to register (up to 10 s).
+    sw = ext_context.wait_for_event('serviceworker', timeout=10_000)
+    if not sw:
+        sw = ext_context.service_workers[0]
     sw.evaluate(f"""() => chrome.storage.sync.set({{
         server:    '{DAEMON_BASE}',
         username:  '{TEST_USERNAME}',
