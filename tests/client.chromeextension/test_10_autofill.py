@@ -81,10 +81,15 @@ def live_flask(flask_app):
 @pytest.fixture(scope='module')
 def ext_context(playwright, live_flask, testserver_proc):
     """Chromium browser context with the unpacked extension loaded."""
+    # headless=False + --headless=new forces the full Chromium binary which
+    # supports extensions and service workers.  chrome-headless-shell (the
+    # default when headless=True) is a stripped binary that does not support
+    # them and silently prevents service worker registration.
     ctx = playwright.chromium.launch_persistent_context(
         '',
-        headless=True,
+        headless=False,
         args=[
+            '--headless=new',
             f'--disable-extensions-except={EXT_DIR}',
             f'--load-extension={EXT_DIR}',
             '--no-sandbox',
@@ -123,10 +128,9 @@ def configured_extension(ext_context):
         'selector':    '#otp-field',
     }])
 
-    # Wait for the extension service worker to register (up to 10 s).
-    sw = ext_context.wait_for_event('serviceworker', timeout=10_000)
-    if not sw:
-        sw = ext_context.service_workers[0]
+    # Service worker may already be registered or may still be starting up.
+    workers = ext_context.service_workers
+    sw = workers[0] if workers else ext_context.wait_for_event('serviceworker', timeout=10_000)
     sw.evaluate(f"""() => chrome.storage.sync.set({{
         server:    '{DAEMON_BASE}',
         username:  '{TEST_USERNAME}',
