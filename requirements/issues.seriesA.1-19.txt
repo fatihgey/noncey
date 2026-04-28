@@ -59,3 +59,12 @@ The popup shall not carry the username, pill "auto" rename "autofill", Text "Con
 Issue #19: 
 Button at the client "New Configuration" shall have another URL
 auth/configs/new -> auth/wizard/new
+
+Issue #20:
+A configuration is to be considered effective, if the user set it to active (private configuration) or the user subscribed to it (public configuration). I tested that subscribed configuration are shown on the Android app as "Inactive" and are infact also ineffective
+
+Issue #21:
+Entering the nonce to Spotify prompt doesn't work. Spotify requires a 6-digit number as nonce, and has 6 individual fields as prompt, when entering the first digit, the cursor automatically advances to the next. While other websites, such as eBay, have the same visual design and work with noncey, Spotify does not. I am suspecting a javascript activity in the background.
+Here's the error observation: all digits are entered (by noncey) after each other into the same first-digit input field.
+The OTP field selector is: 'input[aria-label="Digit\ 1\ of\ 6\,\ enter\ the\ login\ code\ sent\ to\ your\ email"]', and the prompt page of spotify is saved as html and attached.
+Find the root cause, suggestion options to support pages like Spotify by noncey.

@@ -30,5 +30,20 @@ Please summarize the tests that are build and stored at /c/Claude/noncey/tests. 
 Current tests probably do not cover novell features (implementations §7-§10). Please add tests to cover the new features
 
 
+W4 Redo Maintenance
+- Set parameters 
+  - for deletion of email backups at daemon
+  - for deletion of tokens at daemin
+  - for deletion of SMS at phone that have been automatically forwarded
 
+W5 UI Chrome Client, options/options.html Configurations tab
+- Drop private/public
+- Drop Open button, make rows clickable
+- Badges as for daemon: incomplete -> active -> "active" (as for active tested)
+- Add on the right end "prompt missing" for those that are missing prompt
+
+W6
+- Incompletes must be at the top of the list (client+daemon)
+- Incompletes must be at the bottom of the list at Android, marking them Incomplete (red) instead of "Inactive" (gray)
+- Configuration list should be sorted by Configuration Name alphabetically
 

@@ -1,0 +1,183 @@
+Change #20:
+Daemon (/auth/admin/users) needs to show in a column that it has long lasting sessions (icon for Chrome, icon for Android), it should also have an action button sessions that opens a page listing those session, each of which offering a logout button.
+
+Change #21: Marketplace listing shall show (visually) what type of channels are embodied in a public configuration
+
+Change #22: Some provider emails contain a line with nothing more than the nonce (and maybe a whitespace), this is not covered by the current implementation of the daemon. Add a nonce-parsing-configuration option that enters a regex, add a note that the regex is applied line by line (no \n), and describe via example (visible at the page) how grouping must be added to extract that nonce.
+
+Change #23: Add a refresh buttom to the toolbar popup of the client, i.e. when no nonce is picked-up, but should be present, a manual poll can be triggered. On each manual poll, write to console, how many new nonce have been picked up
+
+Change #24: 
+Context: daemon, urls: auth/unmatched, auth/configs/(id)/channels/new
+- Insert a channel name by default in the input field, user may change it, or just leave as is. Convension for the default name: SMS|Email #n
+  - #n only for the 2nd, 3rd, etc.. of that type, eg. SMS, SMS #2, Email, SMS #3
+- Group next input fields into a block called "Extraction"
+  - Add an Item to that block called Test Extraction
+	- It should have a button called Test config and a read-only input field displaying the extracted nonce as result of the test. The test takes the configuration that is currently present in the form into account (not the stored one) - It's like a pre-flight check, before saving the configuration
+- Group the remainder as "Header Matching"
+- Create channel button shall be at the same level as Dismiss and back
+- Make the form convenient in the presence of errors:
+  Behaviour is today: When hitting Create channel and some information is missing or a constraint is not met, error appears at the top and ALL inputs have been reset, i.e. for retrying the user has to reenter that data.
+  Behaviour should be: all input stays, the attention needing form field is hightlighted (already the case today).
+
+Change #25:
+Download Gmail filters shall include all email channels from configuration that
+- are subscribed by this user
+- are owned by this user (irrespective of status incomplete or valid or valid tested)
+
+Change #25.1
+Download Gmail filter must include per filter the sender email address as well as the subject is one has been specified in the header.
+This is the current filter it produces: 
+	<entry>
+		<category term="filter"/>
+		<title>Mail Filter</title>
+		<ns0:property name="from" value="account-update@amazon.de"/>
+		<ns0:property name="label" value="noncey"/>
+		<ns0:property name="forwardTo" value="nonce-fatih@noncey.geneso.de"/>
+		<ns0:property name="shouldNeverSpam" value="true"/>
+		<ns0:property name="shouldArchive" value="true"/>
+	</entry>
+
+Issue #20: SMS matching on body is not automatically forwarded. Let's find the root cause.
+
+Change #26:
+Add a log tab to the Android app as 3rd tab, i.e. SMS, Account, Trace
+- In the log tab, write messages starting with a short timestamp: HH:mm:ss Message
+- Log must contain entries older than 24h
+- Log shall list: Result of checking SMS for matching, potentials matches with a named configuration, and the fact that the email has been forwarded. All these information can be in one log message.
+- daemon at auth/, table header Waiting shall become "# Codes"
+- daemon at auth/configs/(id), add a third table only if nonces are present, listing the nonce and their age. The table header shall have a clear button
+
+
+Change #26.1
+- Android app trace shall also log manually-forwarded SMS, and activation and deactivation of configurations, change of settins, login/logout to server activities
+  - It should also log unmatching SMS
+
+Change 27
+- Android app UI logic: For login, toggle between Connect udn Logout btn, both can never be present simultanously
+
+Change #27.1
+- Android app, Account/Settings: Header "Spool" -> "Spool for Forward to Server", "Phone" -> Cannocial Phone Number Formatting, "Country calling code (eg. 49..)" -> "Your Country code (eg. 49..)"
+
+Change #28
+- Accessing a auth-protected URL A at the daemon redirects to a login screen (if no auth is present). After login, /auth (=> / of the application) is shown, but A should be shown instead
+- Marketplace table shall list owner as creator
+
+Change #29
+- Rename /auth/account/password to /auth/account/settings
+- Add a button new section (follow the current style on the page, using vertical lines to seperate sections), called Account Deletion and add a button "Close Account" (bootstrap danger button). Click will load /auth/account/close.
+- auth/account/close
+  Title: Account Deletion
+  Clicking on the button below will mark your account for deletion within 3 days. Within this period, you can get back to this page an disable deletion. Each repeated marking for deletion will reset the 3-day timer. After 3 days passed at which your account remains marked for deletion, your account (incl. all your data, see below) will be irrovacably deleted.
+ 
+  Danger button "Mark Account for Deletion" -> on click toggle to -> Success button "Unmark for deletion"
+  When Account is marked for deletion, in the next line, add text: Account will be deleted in 2d 23h (rounding down, i.e. for deletion period between 2d23h and 2d24h), show <1h for the remaining last hour. Ensure (cronjob) that accounts are acutally deleted.
+
+  Next section (<HR>)
+  Title: Your data
+  From there on, list each information-block as H3
+
+  - Your account
+  Username, password, email address, setting of country code 
+ 
+  - Your stored configurations
+  #n private configurations
+
+  - Your stored nonces
+  #m nonces currently stored
+
+
+- Deletion of account entails
+  - Removing subscriptions
+  - Removing ownership/creatorship from public configurations
+  - Removing all private configurations
+  - Removing all existing nonces
+  - Removing all unmatched
+  - Removing account (save the email address for the next step)
+  - Sending an email (if email present): Subject: Account Deletion Noncey, Body: Your account has been successfully deleted.
+
+- Ensure that unmatched -> configuration creation is completed, no trail for the unmatched data (SMS or email) is stored at the DB
+
+Change #30 (affects daemon component only)
+- /auth/account/password: Remove section Gmail filter export 
+- /auth: Make the button Gmail filters only appear when at least one entry is present in the list of configuration (same page, above) which has at least one email channel. If there's only one public configuration at this list, and user hits unsubscribe, i.e. item still in the list (but only per view, not in the data model), the button should disappear. When user hits subscribe again, it should reappear
+- /auth/configs/(id): create a new section below channels called "Publish", move "I have read and agree to the noncey Terms of Use.. " and the corresponding btn ("Submit for market..") in that section
+- /auth: In the list of configurations, reduce display of multiple batches
+  - "active" always includes valid and valid+tested (i.e. valid/valid+tested only shown if not active)
+  - "active" badge for "valid" configurations shall be of css class badge_valid_tested -> I need the css styling, you may rename the class to fit semantically -> badge_active_valid
+  - "active" badge for "valid tested" configurations shall be of css class badge_success
+
+Change #30.1
+- auth/account/password: Move btn Close Account next to Change password button (rename to "Delete account"), and remove the Account Deletion section on this page
+- auth/admin/users/(id)/sessions, Table/column Client: 
+  - "Unbadge" data in this column
+  - Replace icons by Bootstrap icons
+    - Android app: phone-fill
+    - Browser: browser-chrome
+  - Move btn Revoke all to the same level as Back to users
+- /auth/admin/users: 
+  - Make table row clickable (replaces Edit btn, i.e. remove Edit button, too)
+- /auth/admin/users/(id)/edit
+  - Put "Delete user" next to the other buttons 
+
+Change #30.2
+- /auth/admin/users: Icons recently (#30.1) changed in auth/admin/users/(id)/sessions, shall be accordingly changed/replaced here in column Sessions
+
+Change #30.3
+- Add a (non-mandatory) comment field per user, present in creation and editing of users (auth/admin/users/new and auth/admin/users/(id)/edit)
+
+Change #30.4
+- Whenever there's a Delete button on a line with other button, it shall be right-aligned, while all other buttons are left aligned, occations:
+  - /auth/account/password
+  - /auth/admin/users/(2)/edit
+  - /auth/unmatched/(id)    --> Dismiss button
+  - /auth/configs/14
+- Whenever there's a listing of items in a table, the row should be clickable, triggering an edit (or if read-only context) a view-only details operation
+  - apply this to /auth/unmatched -> click on row replaces "Inspect operation"
+- Write both rules as a start of a style guide into c:/Claude/Claude.md
+
+Change 31: (chrome)
+In this component, at the options page (/options/options.html) create a third tab "RegEx Playground". Make this also the H1 of that tab/page, followed by an input field, in which the user can enter a regex, next there shall be a multiline input field (6 lines long) at which the user may enter URLs (-> RegEx Test Subjects), one per line. Below that shall be a Assessment "Result" Area. While the user is changing the first input field (regex), the result area shall show all the URLs, indicating (1) which part of this string/url would be currently matching and (2) whether a URL would be matching if the regex in this input field would the prompt URL configuration, and the URL in question be one surved on a tab to which noncey will engage.
+Requirement clear? Any questions?
+
+Change 32 (daemon)
+- /auth/configs/(id)/edit: Description is displayed to be optional, although it is not. 
+- Public configurations are by definition read-only. Let's an exception to that (implementation as well as CONFIGURATION_CONCEPT.md). Admin users may change the description. That is, for admin users and public configurations, /auth/configs/12 must add multi-line form field for editing description. For that make a section as for Prompt and Channels, above Prompt, and call it Description.
+
+Change 33 (client + android app)
+Let's implement an auto-publish mechanism for client and android app, that is, these files shall be pushed to a website.
+Different phases/changes necessary.
+Phase 1: conserve build meta-data
+  create an ini-file next the built file on build
+  - For Android app, "build.bat release" shall do that
+    - Directory: <projDir>\app\build\outputs\apk\release
+    - Release file name: noncey-android-app-vM.N.P-kkkkkk.apk + ini
+  - For Chrome client, "build.bat" shall do it
+    - Directory: <projDir>
+    - Release file name: noncey-chromeext-vM.N.P-kkkkkk.zip + ini
+  - Ini file 
+    [main]
+    version=M.N.P-kkkkkk
+    modified=iso8601 of build time
+Phase 2: upload
+  - Upload the release in question (put this code into the respective build.bat) 
+     - noncey-<...>-vM.N.P-kkkkkk.{apk|zip}
+     - noncey-<...>-vM.N.P-kkkkkk.ini
+         to 
+     - (ssh/scp) sigma.geneso.de:/home_web/r-programming.de/wwwroot/download
+  - Create a symlink of those files to respective no-version-containing filename
+      eg. noncey-android-app-vM.N.P-kkkkkk.apk/ini -> noncey-android-app.apk/ini   (delete pre-existing symlinks before)
+  - You may assume putty is installed an available in %PATH%, use its SCP + SSH capacities
+  - You may assume that ssh-agent based authentication is active (and simply ignore need for auth)
+  - You may assume that sigma.geneso.de is a Linux system and your user has superuser privileges on it
+Phase 3: Show on website
+  - Website is present here: C:\git\pairp-web (as git repository)
+  - In /noncey, there's already a download section, add a "local version" item to both components, list the current version and build time (from the ini file)
+  - Respect meticulously the style of this website
+
+  
+
+
+
+
+

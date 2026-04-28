@@ -1,75 +1,34 @@
 # noncey — project CLAUDE.md
 
-## What this project is
+---
 
-noncey is a two-component email OTP relay:
+## Terminology and authorative data sources
 
-```
-incoming email
-      │
-      ▼
-Postfix → nonce-pipe → noncey.daemon   ←── REST API ──  noncey.client.chromeextension
-                             │                                      │
-                          SQLite                          auto-fill OTP field
-```
+When the user says "client" without qualification, assume the Chrome extension unless context implies Android.
 
-Emails arrive at a dedicated domain (`nonces.yourdomain.com`), are piped into the
-daemon, nonces extracted and stored in SQLite, then polled by a Chrome extension
-that fills OTP fields automatically or on demand.
+Authoritative architecture reference: `noncey.daemon/ARCHITECTURE.md`
+Authoritative extensive concept of Configuration: `noncey.daemon/CONFIGURATION.md`
+Style GUIDE for deamon's UI: `noncey.daemon/STYLEGUIDE_UI.md`
+
+## Troubleshooting policy
+
+Confirm root cause first before proposing or executing solutions. Asking the user for additional info or probes is fine and expected.
 
 ---
 
-## Repository layout (three sibling git repos)
+## Versioning strategy
 
-All three repos live at the same directory level:
+All noncey repos follow the same versioning scheme.
 
-```
-C:\Claude\
-  noncey\                          ← THIS REPO — umbrella: tests + docs
-    tests\
-      daemon\                      pytest tests for the daemon (test_01–test_05)
-      client.chromeextension\      Playwright tests for the extension (test_10)
-      run_smoke.sh                 Entry point
-      conftest.py / pytest.ini
-    README.md
+**Formal version** (`m.n.p`) — used wherever the ecosystem requires a clean version: package manifests, `manifest.json`, `build.gradle` `versionName`, npm/Gradle metadata, etc.
 
-  noncey.daemon\                   Linux daemon (Flask + SQLite + Postfix)
-    app.py                         REST API + Flask app factory
-    admin.py                       Admin UI Blueprint (/noncey/ prefix)
-    db.py                          Shared DB helpers
-    ingest.py                      Postfix pipe handler — extracts + stores nonces
-    provision.py                   flask add-user / remove-user CLI commands
-    schema.sql                     SQLite schema (CREATE TABLE IF NOT EXISTS)
-    install.sh                     Idempotent installer — run as root on server
-    noncey.conf.example            Config template
-    requirements.txt
-    templates/admin/               Jinja2 templates for admin UI
-    ARCHITECTURE.md                Full architecture reference (authoritative)
+**Display version** (`m.n.p+kkkkkkk`) — the string shown inside the running components (UI, logs, about screens). Uses semver build-metadata syntax; the `+` suffix is ignored by comparators so it carries no precedence meaning.
 
-  noncey.client.chromeextension\   Chrome extension (Manifest V3, vanilla JS)
-    manifest.json
-    background.js                  Service worker — polling, auth, state
-    content.js                     Injected into pages — receives fill commands
-    picker.js                      Visual OTP field picker mode
-    popup/                         Toolbar popup (popup.html/js/css)
-    options/                       Settings page (options.html/js/css)
-```
+**Deriving the version at build time:**
 
-GitHub remotes:
-- noncey (this repo): https://github.com/fatihgey/noncey.git
-- noncey.daemon:      https://github.com/fatihgey/noncey.daemon.git
-- noncey.client.chromeextension: https://github.com/fatihgey/noncey.client.chromeextension.git
-
----
-
-## Session setup
-
-Claude Code auto-loads the CLAUDE.md in whichever directory you open it from.
-To get full project context, open Claude Code from `C:\Claude\noncey` and mention
-which component you're working on. The sibling repo paths above will orient you.
-
-If working on a single component, open Claude Code from that repo's directory —
-its own CLAUDE.md covers the relevant specifics.
+- `m.n.p` comes from the most recent git tag on the repo (format `vM.N.P` or `M.N.P`). If no tag exists, default to `1.0.0`.
+- `kkkkkkk` is the 7-character short commit hash (`git rev-parse --short HEAD`).
+- Canonical shell snippet: `git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0"`
 
 ---
 
@@ -78,10 +37,3 @@ its own CLAUDE.md covers the relevant specifics.
 After every change: commit and push to the relevant repo's GitHub remote.
 
 ---
-
-## noncey.daemon — deployment note
-
-`install.sh` is idempotent: stops the service, overwrites app files, runs DB
-migrations, reinstalls pip deps, regenerates all config/unit files, and restarts.
-Config at `/opt/noncey/daemon/etc/noncey.conf` is never touched by the installer
-(created once manually). Safe to re-run after any source change.

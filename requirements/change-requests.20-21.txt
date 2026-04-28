@@ -1,8 +1,0 @@
-Change #20:
-Daemon (/auth/admin/users) needs to show in a column that it has long lasting sessions (icon for Chrome, icon for Android), it should also have an action button sessions that opens a page listing those session, each of which offering a logout button.
-
-Change #21: Marketplace listing shall show (visually) what type of channels are embodied in a public configuration
-
-Change #22: Some provider emails contain a line with nothing more than the nonce (and maybe a whitespace), this is not covered by the current implementation of the daemon. Add a nonce-parsing-configuration option that enters a regex, add a note that the regex is applied line by line (no \n), and describe via example (visible at the page) how grouping must be added to extract that nonce.
-
-Change #23: Add a refresh buttom to the toolbar popup of the client, i.e. when no nonce is picked-up, but should be present, a manual poll can be triggered. On each manual poll, write to console, how many new nonce have been picked up
